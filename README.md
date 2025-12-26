@@ -1,0 +1,2 @@
+# SO6502
+A small 65C02 SBC
