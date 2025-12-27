@@ -18,5 +18,9 @@ My 65C02 SBC inspired by Ben Eater's 6502 computer on a breadboard series of You
   - includes Enhanced BASIC V2.22 by Lee Davison
 - Tali Forth 2
 
-### History
+
 I started with the Ben Eater 6502 computer on a breadboard kit, built a wire-wrap version, and then designed a PCB using KiCad.
+
+Interfacing with the SO6502 is accomplished using PuTTY and a USB to RS-232 cable with a NULL modem adapter connected to the serial port on the SO6502. An additional physical serial port can be installed if serial communication to other devices is desired.
+
+The PCB is 4 layer, with separate power and ground planes. It was kept to 100mm x 100mm because larger boards were more expensive.
