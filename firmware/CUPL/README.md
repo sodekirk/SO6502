@@ -5,7 +5,7 @@ I decided to use 12 address lines to make the memory addressing granularity fine
 
 I played around a little to see if I could also use the 22V10 to introduce CPU wait states for slower peripherals (RAM/ROM), but I don't think I ever got it working.
 
-The code is compiled using WinCUPL into a .jed file that can be written to the 22V10 using a programmer, such as the XGecu TL866II+, or similar.
+The code is compiled using WinCUPL into a .jed file that can be written to the 22V10 using a programmer such as the XGecu TL866II+ or similar.
 
 WinCUPL is old and finicky. It was probably written back in the days of short filenames (8 character name + 3 character extension), so it is a good idea to stick with that and to avoid spaces in the filenames and paths to the files.
 

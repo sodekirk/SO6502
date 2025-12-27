@@ -1,5 +1,5 @@
 # SO6502
-My 65C02 SBC inspired by Ben Eater's 6502 computer on a breadboard series of YouTube videos.
+My 65C02 SBC inspired by Ben Eater's "6502 Computer on a Breadboard" series of YouTube videos.
 
 ![SO6502 image](./images/SO6502.jpg?raw=true)
 
