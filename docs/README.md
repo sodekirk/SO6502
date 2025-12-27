@@ -15,6 +15,7 @@ My 65C02 SBC inspired by Ben Eater's 6502 computer on a breadboard series of You
 
 #### Firmware
 - C02Monitor - written by Kevin Maier
+  - includes Enhanced BASIC V2.22 by Lee Davison
 - Tali Forth 2
 
 ### History

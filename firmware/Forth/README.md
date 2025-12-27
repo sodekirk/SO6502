@@ -1,3 +1,11 @@
+# SO6502 Port of Tali Forth 2
+This is a port of Tali Forth 2 for the SO6502 SBC.
+
+Porting Tali Forth 2 is fairly straightforward and well documented.
+Follow the instructions to create a platform file for your computer in the platform directory.
+
+The README from the Tali Forth distribution follows.
+
 # Tali Forth 2 for the 65c02  
 Scot W. Stevenson <scot.stevenson@gmail.com>   
 First version: (Tali Forth 1 ) 19. Jan 2014
