@@ -1,0 +1,56 @@
+Name     SO6502 ;
+PartNo   00 ;
+Date     9/8/2020 ;
+Revision 01 ;
+Designer Shawn Odekirk ;
+Company   ;
+Assembly  None ;
+Location  ;
+Device   g22v10 ;
+
+/* *************** INPUT PINS *********************/
+PIN 1  = PHI2;
+PIN 2  = RWB;
+PIN 3  = A15;
+PIN 4  = A14;
+PIN 5  = A13;
+PIN 6  = A12;
+PIN 7  = A11;
+PIN 8  = A10;
+PIN 9  = A9;
+PIN 10 = A8;
+PIN 11 = A7;
+PIN 13 = A6;
+PIN 14 = A5;
+PIN 15 = A4;
+
+/* *************** OUTPUT PINS *********************/
+PIN 16 = !CS2892;
+PIN 17 = !CSRAM;
+PIN 18 = !CSROM;
+PIN 19 = !CS6522;
+PIN 20 = !CS_SPARE;
+PIN 21 = !RD;
+PIN 22 = !WR;
+PIN 23 = READY;
+
+/* ************* LOGIC EQUATIONS *******************/
+/* *** Chip Select / Address Decoding *** */
+FIELD address = [A15..A0];
+CSRAM    = address:[0000..7FFF];
+CS2892   = address:[8000..800F];
+CS6522   = address:[8010..801F];
+CS_SPARE = address:[8020..802F];
+CSROM    = address:[8030..FFFF];
+
+/* *** PHI2 Qualified Read and Write *** */
+WR = PHI2 & !RWB;
+RD = PHI2 & RWB;
+
+/* *** Wait State *** */
+READY.d  = !((CSROM # CSRAM) & READY);
+/*READY.oe = !READY;*/
+READY.oe = 'b'0;
+READY.ar = 'b'0;
+READY.sp = 'b'0;
+

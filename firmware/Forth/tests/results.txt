@@ -1,0 +1,348 @@
+Tali Forth 2 default kernel for py65mon (18. Feb 2018)
+
+
+Tali Forth 2 for the 65c02
+Version 1.0 24. Jan 2020 
+Copyright 2014-2020 Scot W. Stevenson
+Tali Forth 2 comes with absolutely NO WARRANTY
+Type 'bye' to exit
+\ From: John Hayes S1I  ok
+\ Subject: tester.fr  ok
+\ Date: Mon, 27 Nov 95 13:10:09 PST    ok
+  ok
+\ Modified by SamCo 2018-05 for testing Tali Forth 2.  ok
+\ The main change is lowercasing all of the words as Tali  ok
+\ is case sensitive, as well as replacing tabs with spaces.  ok
+\ A word to display the actual (erroneous) results was also added.  ok
+\ Modified by SamCo 2018-10 to facilitate using standard ANS tests.  ok
+\ The testing words were changed from { and } to T{ and }T to  ok
+\ match the testing words currently being used by ANS standard tests.  ok
+  ok
+\ (C) 1995 JOHNS HOPKINS UNIVERSITY / APPLIED PHYSICS LABORATORY  ok
+\ MAY BE DISTRIBUTED FREELY AS LONG AS THIS COPYRIGHT NOTICE REMAINS.  ok
+hex  ok
+  ok
+\ Set the following flag to true for more verbose output; this may allow you to  ok
+\ tell which test caused your system to hang. With Tali Forth, this is useless  ok
+\ because the Python script echoes all the output anyway.  ok
+variable verbose  false verbose !  ok
+  ok
+variable actual-depth   \ stack record  ok
+create actual-results  20 cells allot  ok
+  ok
+  ok
+\ Empty stack: handles underflowed stack too  ok
+: empty-stack ( ... -- )   compiled
+   depth ?dup if   compiled
+      dup 0< if   compiled
+         negate 0 do 0 loop   compiled
+      else   compiled
+         0 do drop loop   compiled
+      then   compiled
+   then ;  ok
+  ok
+\ Print the previous test's actual results. Added by SamCo 2018-05   ok
+: show-results ( -- )   compiled
+   s"  ACTUAL RESULT: { " type  compiled
+   actual-depth @ 0 ?do  compiled
+      actual-results   compiled
+      actual-depth @ i - 1- \ Print them in reverse order to match test.  compiled
+      cells + @ .  compiled
+   loop  compiled
+   s" }" type ;  ok
+  ok
+\ Display an error message followed by the line that had the error  ok
+: error  \ ( C-ADDR U -- )   compiled
+   type source type \ display line corresponding to error  compiled
+   empty-stack      \ throw away every thing else  compiled
+   show-results ;   \ added by SamCo to show what actually happened  ok
+  ok
+\ Syntactic sugar  ok
+: T{  ( -- ) ;  ok
+  ok
+\ Record depth and content of stack  ok
+: ->  ( ... -- )   compiled
+   depth dup actual-depth !  \ record depth  compiled
+   ?dup if                   \ if there is something on stack ...  compiled
+      0 do   compiled
+         actual-results i cells + !   compiled
+      loop                   \ ... save it  compiled
+   then ;  ok
+  ok
+\ Compare stack (expected) contents with saved (actual) contents  ok
+: }T  ( ... -- )   compiled
+   depth actual-depth @ = if     \ if depths match  compiled
+      depth ?dup if              \ if there is something on the stack  compiled
+         0 do                    \ for each stack item  compiled
+            actual-results i cells + @  \ compare actual with expected  compiled
+            <> if   compiled
+               s" INCORRECT RESULT: " error leave   compiled
+            then  compiled
+         loop  compiled
+      then  compiled
+   else                          \ depth mismatch  compiled
+      s" WRONG NUMBER OF RESULTS: " error  compiled
+   then ;  ok
+  ok
+\ Talking comment  ok
+: testing ( -- )   compiled
+   source verbose @ if   compiled
+      dup >r type cr r> >in !  compiled
+   else >in ! drop  compiled
+   then ;  ok
+  ok
+ ( Running test 'asm' from file 'asm.fs' )  ok
+\ ------------------------------------------------------------------------  ok
+testing assembler words  ok
+  ok
+marker asm-tests   ok
+assembler-wordlist >order  ok
+assembler-wordlist set-current  ok
+hex  ok
+  ok
+\ Test code length and correct operand insertion  ok
+: opcode-test ( opc len addr u -- f )  compiled
+   here        ( opc len addr u here0 )  compiled
+   dup >r      ( opc len addr u here0 ) ( R: here0 )  compiled
+   -rot        ( opc len here0 addr u ) ( R: here0 )  compiled
+   evaluate    ( opc len here0 ) ( R: here0 )  compiled
+  compiled
+   \ See if length is correct  compiled
+   here swap -    ( opc len n ) ( R: here0 )  compiled
+   =              ( opc f ) ( R: here0 )  compiled
+   swap           ( f opc ) ( R: here0 )  compiled
+  compiled
+   \ See if opcode is correct. We can't use AND for the last step because that  compiled
+   \ is replaced by the assembler instruction of the same name  compiled
+   r> c@          ( f opc c )  compiled
+   =              ( f f )   compiled
+;  ok
+  ok
+\ Test for little endian behavior with three-byte instructions  ok
+\ For instance, 'sta 1122' must become 8D 22 11. Note that Tali stores the cell  ok
+\ values little-endian as well, which makes this test confusing at first glance.  ok
+\ Insert  CR DUP 3 DUMP CR  after EVALUTE to convince yourself that this is okay  ok
+: little-endian? ( u-want addr u -- f )  compiled
+   here -rot      ( u-want here0 addr u )  compiled
+   evaluate       ( u-want here0 )  compiled
+   \ cr dup 3 dump cr   \ Manual check, insert if paranoia attacks  compiled
+   1+             ( u-want here0+1 ) \ Skip opcode  compiled
+   @              ( u-want u-have )  compiled
+   =              ( f )   compiled
+;  ok
+  ok
+\ Test correct operand for two-byte instructions. Note there is little  ok
+\ difference between this code and little-endian? at the moment. However, this  ok
+\ routine here will have to modified for branch instructions at a later date.  ok
+: correct-operand? ( u-want addr u -- f )  compiled
+   here -rot      ( u-want here0 addr u )  compiled
+   evaluate       ( u-want here0 )  compiled
+   1+             ( u-want here0+1 )  compiled
+   c@             ( u-want u-got )  compiled
+   =              ( f )  compiled
+;   ok
+  ok
+\ Make lookups of these numbers faster.  They won't have to fall through  ok
+\ to NUMBER and they will be at beginning of dictionary.  ok
+: 12 12 ;  ok
+: 1122 1122 ;  ok
+: 3 3 ;  ok
+  ok
+\ --------------------------------------------------------------------------  ok
+  ok
+\ Testing pseudo-instructions  ok
+T{ here  0a lda.# push-a rts  execute -> 0a }T  ok
+  ok
+\ Testing a two-byte instruction for correct operand handling  ok
+T{ 12 s" 12 lda.#" correct-operand? -> true }T  ok
+  ok
+\ Testing a three-byte instruction for little endian handling  ok
+T{ 1122 s" 1122 sta" little-endian? -> true }T  ok
+  ok
+\ Testing all assembler instructions: Opcode and length  ok
+T{ 069 2 s" 12 adc.#" opcode-test -> true true }T  ok
+T{ 07D 3 s" 1122 adc.x" opcode-test -> true true }T  ok
+T{ 079 3 s" 1122 adc.y" opcode-test -> true true }T  ok
+T{ 065 2 s" 12 adc.z" opcode-test -> true true }T  ok
+T{ 072 2 s" 12 adc.zi" opcode-test -> true true }T  ok
+T{ 071 2 s" 12 adc.ziy" opcode-test -> true true }T  ok
+T{ 075 2 s" 12 adc.zx" opcode-test -> true true }T  ok
+T{ 061 2 s" 12 adc.zxi" opcode-test -> true true }T  ok
+T{ 02D 3 s" 1122 and." opcode-test -> true true }T  ok
+T{ 029 2 s" 12 and.#" opcode-test -> true true }T  ok
+T{ 03D 3 s" 1122 and.x" opcode-test -> true true }T  ok
+T{ 039 3 s" 1122 and.y" opcode-test -> true true }T  ok
+T{ 025 2 s" 12 and.z" opcode-test -> true true }T  ok
+T{ 032 2 s" 12 and.zi" opcode-test -> true true }T  ok
+T{ 031 2 s" 12 and.ziy" opcode-test -> true true }T  ok
+T{ 035 2 s" 12 and.zx" opcode-test -> true true }T  ok
+T{ 021 2 s" 12 and.zxi" opcode-test -> true true }T  ok
+T{ 00E 3 s" 1122 asl" opcode-test -> true true }T  ok
+T{ 00A 1 s" asl.a" opcode-test -> true true }T  ok
+T{ 01E 3 s" 1122 asl.x" opcode-test -> true true }T  ok
+T{ 006 2 s" 12 asl.z" opcode-test -> true true }T  ok
+T{ 016 2 s" 12 asl.zx" opcode-test -> true true }T  ok
+T{ 090 2 s" 12 bcc" opcode-test -> true true }T  ok
+T{ 0B0 2 s" 12 bcs" opcode-test -> true true }T  ok
+T{ 0F0 2 s" 12 beq" opcode-test -> true true }T  ok
+T{ 02C 3 s" 1122 bit" opcode-test -> true true }T  ok
+T{ 089 2 s" 12 bit.#" opcode-test -> true true }T  ok
+T{ 03C 3 s" 1122 bit.x" opcode-test -> true true }T  ok
+T{ 024 2 s" 12 bit.z" opcode-test -> true true }T  ok
+T{ 034 2 s" 12 bit.zx" opcode-test -> true true }T  ok
+T{ 030 2 s" 12 bmi" opcode-test -> true true }T  ok
+T{ 0D0 2 s" 12 bne" opcode-test -> true true }T  ok
+T{ 010 2 s" 12 bpl" opcode-test -> true true }T  ok
+T{ 080 2 s" 12 bra" opcode-test -> true true }T  ok
+T{ 000 2 s" 12 brk" opcode-test -> true true }T  ok
+T{ 050 2 s" 12 bvc" opcode-test -> true true }T  ok
+T{ 070 2 s" 12 bvs" opcode-test -> true true }T  ok
+T{ 018 1 s" clc" opcode-test -> true true }T  ok
+T{ 0D8 1 s" cld" opcode-test -> true true }T  ok
+T{ 058 1 s" cli" opcode-test -> true true }T  ok
+T{ 0B8 1 s" clv" opcode-test -> true true }T  ok
+T{ 0CD 3 s" 1122 cmp" opcode-test -> true true }T  ok
+T{ 0C9 2 s" 12 cmp.#" opcode-test -> true true }T  ok
+T{ 0DD 3 s" 1122 cmp.x" opcode-test -> true true }T  ok
+T{ 0D9 3 s" 1122 cmp.y" opcode-test -> true true }T  ok
+T{ 0C5 2 s" 12 cmp.z" opcode-test -> true true }T  ok
+T{ 0D2 2 s" 12 cmp.zi" opcode-test -> true true }T  ok
+T{ 0D1 2 s" 12 cmp.ziy" opcode-test -> true true }T  ok
+T{ 0D5 2 s" 12 cmp.zx" opcode-test -> true true }T  ok
+T{ 0C1 2 s" 12 cmp.zxi" opcode-test -> true true }T  ok
+T{ 0EC 3 s" 1122 cpx" opcode-test -> true true }T  ok
+T{ 0E0 2 s" 12 cpx.#" opcode-test -> true true }T  ok
+T{ 0E4 2 s" 12 cpx.z" opcode-test -> true true }T  ok
+T{ 0CC 3 s" 1122 cpy" opcode-test -> true true }T  ok
+T{ 0C0 2 s" 12 cpy.#" opcode-test -> true true }T  ok
+T{ 0C4 2 s" 12 cpy.z" opcode-test -> true true }T  ok
+T{ 0CE 3 s" 1122 dec" opcode-test -> true true }T  ok
+T{ 03A 1 s" dec.a" opcode-test -> true true }T  ok
+T{ 0DE 3 s" 1122 dec.x" opcode-test -> true true }T  ok
+T{ 0C6 2 s" 12 dec.z" opcode-test -> true true }T  ok
+T{ 0D6 2 s" 12 dec.zx" opcode-test -> true true }T  ok
+T{ 0CA 1 s" dex" opcode-test -> true true }T  ok
+T{ 088 1 s" dey" opcode-test -> true true }T  ok
+T{ 04D 3 s" 1122 eor" opcode-test -> true true }T  ok
+T{ 049 2 s" 12 eor.#" opcode-test -> true true }T  ok
+T{ 05D 3 s" 1122 eor.x" opcode-test -> true true }T  ok
+T{ 059 3 s" 1122 eor.y" opcode-test -> true true }T  ok
+T{ 045 2 s" 12 eor.z" opcode-test -> true true }T  ok
+T{ 052 2 s" 12 eor.zi" opcode-test -> true true }T  ok
+T{ 051 2 s" 12 eor.ziy" opcode-test -> true true }T  ok
+T{ 055 2 s" 12 eor.zx" opcode-test -> true true }T  ok
+T{ 041 2 s" 12 eor.zxi" opcode-test -> true true }T  ok
+T{ 0EE 3 s" 1122 inc" opcode-test -> true true }T  ok
+T{ 01A 1 s" inc.a" opcode-test -> true true }T  ok
+T{ 0FE 3 s" 1122 inc.x" opcode-test -> true true }T  ok
+T{ 0E6 2 s" 12 inc.z" opcode-test -> true true }T  ok
+T{ 0F6 2 s" 12 inc.zx" opcode-test -> true true }T  ok
+T{ 0E8 1 s" inx" opcode-test -> true true }T  ok
+T{ 0C8 1 s" iny" opcode-test -> true true }T  ok
+T{ 04C 3 s" 1122 jmp" opcode-test -> true true }T  ok
+T{ 06C 3 s" 1122 jmp.i" opcode-test -> true true }T  ok
+T{ 07C 3 s" 1122 jmp.xi" opcode-test -> true true }T  ok
+T{ 020 3 s" 1122 jsr" opcode-test -> true true }T  ok
+T{ 0AD 3 s" 1122 lda" opcode-test -> true true }T  ok
+T{ 0A9 2 s" 12 lda.#" opcode-test -> true true }T  ok
+T{ 0BD 3 s" 1122 lda.x" opcode-test -> true true }T  ok
+T{ 0B9 3 s" 1122 lda.y" opcode-test -> true true }T  ok
+T{ 0A5 2 s" 12 lda.z" opcode-test -> true true }T  ok
+T{ 0B2 2 s" 12 lda.zi" opcode-test -> true true }T  ok
+T{ 0B1 2 s" 12 lda.ziy" opcode-test -> true true }T  ok
+T{ 0B5 2 s" 12 lda.zx" opcode-test -> true true }T  ok
+T{ 0A1 2 s" 12 lda.zxi" opcode-test -> true true }T  ok
+T{ 0AE 3 s" 1122 ldx" opcode-test -> true true }T  ok
+T{ 0A2 2 s" 12 ldx.#" opcode-test -> true true }T  ok
+T{ 0BE 3 s" 1122 ldx.y" opcode-test -> true true }T  ok
+T{ 0A6 2 s" 12 ldx.z" opcode-test -> true true }T  ok
+T{ 0B6 2 s" 12 ldx.zy" opcode-test -> true true }T  ok
+T{ 0AC 3 s" 1122 ldy" opcode-test -> true true }T  ok
+T{ 0A0 2 s" 12 ldy.#" opcode-test -> true true }T  ok
+T{ 0BC 3 s" 1122 ldy.x" opcode-test -> true true }T  ok
+T{ 0A4 2 s" 12 ldy.z" opcode-test -> true true }T  ok
+T{ 0B4 2 s" 12 ldy.zx" opcode-test -> true true }T  ok
+T{ 04E 3 s" 1122 lsr" opcode-test -> true true }T  ok
+T{ 04A 1 s" lsr.a" opcode-test -> true true }T  ok
+T{ 05E 3 s" 1122 lsr.x" opcode-test -> true true }T  ok
+T{ 046 2 s" 12 lsr.z" opcode-test -> true true }T  ok
+T{ 056 2 s" 12 lsr.zx" opcode-test -> true true }T  ok
+T{ 0EA 1 s" nop" opcode-test -> true true }T  ok
+T{ 00D 3 s" 1122 ora" opcode-test -> true true }T  ok
+T{ 009 2 s" 12 ora.#" opcode-test -> true true }T  ok
+T{ 01D 3 s" 1122 ora.x" opcode-test -> true true }T  ok
+T{ 019 3 s" 1122 ora.y" opcode-test -> true true }T  ok
+T{ 005 2 s" 12 ora.z" opcode-test -> true true }T  ok
+T{ 012 2 s" 12 ora.zi" opcode-test -> true true }T  ok
+T{ 011 2 s" 12 ora.ziy" opcode-test -> true true }T  ok
+T{ 015 2 s" 12 ora.zx" opcode-test -> true true }T  ok
+T{ 001 2 s" 12 ora.zxi" opcode-test -> true true }T  ok
+T{ 048 1 s" pha" opcode-test -> true true }T  ok
+T{ 008 1 s" php" opcode-test -> true true }T  ok
+T{ 0DA 1 s" phx" opcode-test -> true true }T  ok
+T{ 05A 1 s" phy" opcode-test -> true true }T  ok
+T{ 068 1 s" pla" opcode-test -> true true }T  ok
+T{ 028 1 s" plp" opcode-test -> true true }T  ok
+T{ 0FA 1 s" plx" opcode-test -> true true }T  ok
+T{ 07A 1 s" ply" opcode-test -> true true }T  ok
+T{ 02E 3 s" 1122 rol" opcode-test -> true true }T  ok
+T{ 02A 1 s" rol.a" opcode-test -> true true }T  ok
+T{ 03E 3 s" 1122 rol.x" opcode-test -> true true }T  ok
+T{ 026 2 s" 12 rol.z" opcode-test -> true true }T  ok
+T{ 036 2 s" 12 rol.zx" opcode-test -> true true }T  ok
+T{ 06E 3 s" 1122 ror" opcode-test -> true true }T  ok
+T{ 06A 1 s" ror.a" opcode-test -> true true }T  ok
+T{ 07E 3 s" 1122 ror.x" opcode-test -> true true }T  ok
+T{ 066 2 s" 12 ror.z" opcode-test -> true true }T  ok
+T{ 076 2 s" 12 ror.zx" opcode-test -> true true }T  ok
+T{ 040 1 s" rti" opcode-test -> true true }T  ok
+T{ 060 1 s" rts" opcode-test -> true true }T  ok
+T{ 0ED 3 s" 1122 sbc" opcode-test -> true true }T  ok
+T{ 0E9 2 s" 12 sbc.#" opcode-test -> true true }T  ok
+T{ 0FD 3 s" 1122 sbc.x" opcode-test -> true true }T  ok
+T{ 0F9 3 s" 1122 sbc.y" opcode-test -> true true }T  ok
+T{ 0E5 2 s" 12 sbc.z" opcode-test -> true true }T  ok
+T{ 0F2 2 s" 12 sbc.zi" opcode-test -> true true }T  ok
+T{ 0F1 2 s" 12 sbc.ziy" opcode-test -> true true }T  ok
+T{ 0F5 2 s" 12 sbc.zx" opcode-test -> true true }T  ok
+T{ 0E1 2 s" 12 sbc.zxi" opcode-test -> true true }T  ok
+T{ 038 1 s" sec" opcode-test -> true true }T  ok
+T{ 0F8 1 s" sed" opcode-test -> true true }T  ok
+T{ 078 1 s" sei" opcode-test -> true true }T  ok
+T{ 08D 3 s" 1122 sta" opcode-test -> true true }T  ok
+T{ 09D 3 s" 1122 sta.x" opcode-test -> true true }T  ok
+T{ 099 3 s" 1122 sta.y" opcode-test -> true true }T  ok
+T{ 085 2 s" 12 sta.z" opcode-test -> true true }T  ok
+T{ 092 2 s" 12 sta.zi" opcode-test -> true true }T  ok
+T{ 091 2 s" 12 sta.ziy" opcode-test -> true true }T  ok
+T{ 095 2 s" 12 sta.zx" opcode-test -> true true }T  ok
+T{ 081 2 s" 12 sta.zxi" opcode-test -> true true }T  ok
+T{ 08E 3 s" 1122 stx" opcode-test -> true true }T  ok
+T{ 086 2 s" 12 stx.z" opcode-test -> true true }T  ok
+T{ 096 2 s" 12 stx.zy" opcode-test -> true true }T  ok
+T{ 08C 3 s" 1122 sty" opcode-test -> true true }T  ok
+T{ 084 2 s" 12 sty.z" opcode-test -> true true }T  ok
+T{ 094 2 s" 12 sty.zx" opcode-test -> true true }T  ok
+T{ 09C 3 s" 1122 stz" opcode-test -> true true }T  ok
+T{ 09E 3 s" 1122 stz.x" opcode-test -> true true }T  ok
+T{ 064 2 s" 12 stz.z" opcode-test -> true true }T  ok
+T{ 074 2 s" 12 stz.zx" opcode-test -> true true }T  ok
+T{ 0AA 1 s" tax" opcode-test -> true true }T  ok
+T{ 0A8 1 s" tay" opcode-test -> true true }T  ok
+T{ 01C 3 s" 1122 trb" opcode-test -> true true }T  ok
+T{ 014 2 s" 12 trb.z" opcode-test -> true true }T  ok
+T{ 00C 3 s" 1122 tsb" opcode-test -> true true }T  ok
+T{ 004 2 s" 12 tsb.z" opcode-test -> true true }T  ok
+T{ 0BA 1 s" tsx" opcode-test -> true true }T  ok
+T{ 08A 1 s" txa" opcode-test -> true true }T  ok
+T{ 09A 1 s" txs" opcode-test -> true true }T  ok
+T{ 098 1 s" tya" opcode-test -> true true }T  ok
+  ok
+\ Testing directives  ok
+  ok
+\ Return to original state  ok
+previous  ok
+decimal ( only forth definitions )   ok
+asm-tests  ok
+  ok
+bye 

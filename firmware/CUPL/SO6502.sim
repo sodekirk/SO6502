@@ -1,0 +1,101 @@
+%SIGNAL
+PIN  15 =  A4 
+PIN  14 =  A5 
+PIN  13 =  A6 
+PIN  11 =  A7 
+PIN  10 =  A8 
+PIN   9 =  A9 
+PIN   8 =  A10 
+PIN   7 =  A11 
+PIN   6 =  A12 
+PIN   5 =  A13 
+PIN   4 =  A14 
+PIN   3 =  A15 
+PIN  16 = !CS2892 
+PIN  19 = !CS6522 
+PIN  17 = !CSRAM 
+PIN  18 = !CSROM 
+PIN  20 = !CS_SPARE 
+PIN   1 =  PHI2 
+PIN  21 = !RD 
+PIN  23 =  READY 
+PIN   2 =  RWB 
+PIN  22 = !WR 
+%END
+
+%FIELD
+FIELD address = A15,A14,A13,A12,A11,A10,A9,A8,A7,A6,A5,A4,A3,A2,A1,A0
+%END
+
+%EQUATION
+CS2892 =>
+    !A4 & !A5 & !A6 & !A7 & !A8 & !A9 & !A10 & !A11 & !A12 & !A13 & !A14 & A15
+
+CS6522 =>
+    A4 & !A5 & !A6 & !A7 & !A8 & !A9 & !A10 & !A11 & !A12 & !A13 & !A14 & A15
+
+CSRAM =>
+    !A15
+
+CSROM =>
+    A6 & A15
+  # A7 & A15
+  # A8 & A15
+  # A9 & A15
+  # A10 & A15
+  # A11 & A15
+  # A12 & A15
+  # A13 & A15
+  # A14 & A15
+  # A4 & A5 & A15
+
+CS_SPARE =>
+    !A4 & A5 & !A6 & !A7 & !A8 & !A9 & !A10 & !A11 & !A12 & !A13 & !A14 & A15
+
+RD =>
+    PHI2 & RWB
+
+READY.d  =>
+    !CSRAM & READY
+  # !CSROM & READY
+
+READY.ar  =>
+    0 
+
+READY.oe  =>
+    0 
+
+READY.sp  =>
+    0 
+
+WR =>
+    PHI2 & !RWB
+
+A4.oe  =>
+    0 
+
+A5.oe  =>
+    0 
+
+CS2892.oe  =>
+    1 
+
+CS6522.oe  =>
+    1 
+
+CSRAM.oe  =>
+    1 
+
+CSROM.oe  =>
+    1 
+
+CS_SPARE.oe  =>
+    1 
+
+RD.oe  =>
+    1 
+
+WR.oe  =>
+    1 
+
+%END
